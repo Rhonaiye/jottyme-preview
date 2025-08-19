@@ -1,9 +1,57 @@
-import React from 'react'
+"use client";
 
-function signup() {
+import Image from "next/image";
+import SignupForm from "@/app/components/ui/signupForm";
+import OtpInput from "@/app/components/ui/otpInput";
+import Logo from "@/app/components/ui/appLogo";
+import WorkspaceSetup from "@/app/components/ui/workspaceSetup";
+import { useSignupStore } from "@/store/signup";
+
+export default function SignUpPage() {
+  const { step, setStep } = useSignupStore();
+
   return (
-    <div>signup</div>
-  )
-}
+    <div className="flex flex-col lg:flex-row min-h-screen bg-white">
+      {/* Left Panel */}
+      <div className="hidden lg:flex flex-1 items-center justify-center text-white py-5 pl-5 relative overflow-hidden">
+        {/* Gradient / Noise Overlays */}
+        <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-indigo-400/20 to-transparent blur-[100px] pointer-events-none" />
+        <div className="absolute top-20 right-0 w-48 h-48 bg-gradient-to-tr from-indigo-300/20 to-transparent blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-52 h-52 bg-gradient-to-tr from-indigo-500/15 to-transparent blur-[90px] pointer-events-none" />
 
-export default signup
+        <div className="bg-[#21124C] flex flex-col gap-8 rounded-2xl min-h-full min-w-full pt-[30%] relative z-10">
+          <h1 className="text-2xl md:text-3xl font-bold text-center">
+            Sign up and come on in
+          </h1>
+          <div className="flex justify-center">
+            <Image
+              src="/images/sign-up.png"
+              alt="sign-up image"
+              width={500}
+              height={500}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel */}
+      <div className="flex-1 flex flex-col justify-center relative overflow-hidden bg-white text-black">
+        {/* Top-right gradient streaks */}
+        <div className="absolute top-0 right-0 w-14 h-72 bg-gradient-to-tr from-[#822EDECC] to-transparent blur-[80px] pointer-events-none" />
+        <div className="absolute bottom-[10%] right-0 w-12 h-72 bg-gradient-to-br from-[#822EDECC]/40 to-transparent blur-[80px] pointer-events-none" />
+
+        {/* Logo */}
+        <div className="absolute top-10 sm:top-12 md:top-14 lg:top-20 left-4 sm:left-6 md:left-8 lg:left-12 z-20 pointer-events-none">
+          <div className="block sm:hidden md:hidden lg:block">
+            <Logo />
+          </div>
+        </div>
+
+        {/* Signup Steps */}
+        {step === 1 && <SignupForm handleSignup={() => setStep(2)} />}
+        {step === 2 && <OtpInput onBack={() => setStep(1)} />}
+        {step === 3 && <WorkspaceSetup />}
+      </div>
+    </div>
+  );
+}
