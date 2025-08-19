@@ -83,6 +83,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
             {otp.slice(0, 3).map((value, index) => (
               <input
                 key={index}
+                //@ts-ignore
                 ref={(ref) => (inputRefs.current[index] = ref)}
                 type="text"
                 inputMode="numeric"
@@ -103,6 +104,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
             {otp.slice(3, 6).map((value, index) => (
               <input
                 key={index + 3}
+                //@ts-ignore
                 ref={(ref) => (inputRefs.current[index + 3] = ref)}
                 type="text"
                 inputMode="numeric"
