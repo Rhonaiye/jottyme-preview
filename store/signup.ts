@@ -22,7 +22,7 @@ interface SignupState {
 }
 
 export const useSignupStore = create<SignupState>((set) => ({
-  step: 1,
+  step: 3,
   fullName: "",
   email: "",
   password: "",

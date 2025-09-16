@@ -70,11 +70,11 @@ const OtpInput: React.FC<OtpInputProps> = ({
 
         {/* Title */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">Email Verification</h2>
-          <p className="text-gray-600 text-sm">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4 2xl:text-[35px]">Email Verification</h2>
+          <p className="text-gray-600 text-sm 2xl:text-[18px]">
             We sent a verification code to <span className="font-medium">{email}</span>.
           </p>
-          <p className="text-gray-600 mt-2 text-sm">Please enter the code below.</p>
+          <p className="text-gray-600 mt-2 text-sm 2xl:text-[18px] 2xl:mt-5">Please enter the code below.</p>
         </div>
 
         {/* OTP Input Fields */}
@@ -92,13 +92,13 @@ const OtpInput: React.FC<OtpInputProps> = ({
                 onChange={(e) => handleChange(index, e.target.value)}
                 onClick={() => handleClick(index)}
                 onKeyDown={(e) => handleKeyDown(index, e)}
-                className="w-11 h-12 text-center text-xl font-semibold text-gray-900 bg-transparent border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all duration-200"
+                className="w-11 h-12 2xl:w-14  2xl:h-16 text-center text-xl font-semibold text-gray-900 bg-transparent border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                 maxLength={1}
               />
             ))}
           </div>
-          <div className="flex items-center justify-center w-6 h-14 mx-4">
-            <span className="text-gray-400 text-xl font-bold">—</span>
+          <div className="flex items-center justify-center w-6 h-14 mx-2">
+            <span className="inline-block bg-gray-300 w-4 h-1"></span>
           </div>
           <div className="flex gap-3">
             {otp.slice(3, 6).map((value, index) => (
@@ -113,7 +113,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
                 onChange={(e) => handleChange(index + 3, e.target.value)}
                 onClick={() => handleClick(index + 3)}
                 onKeyDown={(e) => handleKeyDown(index + 3, e)}
-                className="w-11 h-12 text-center text-xl font-semibold text-gray-900 bg-transparent border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all duration-200"
+                className="w-11 h-12 2xl:w-14  2xl:h-16 text-center text-xl font-semibold text-gray-900 bg-transparent border border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200 transition-all duration-200"
                 maxLength={1}
               />
             ))}
@@ -124,7 +124,7 @@ const OtpInput: React.FC<OtpInputProps> = ({
         <div className="flex justify-center mb-6">
           <button
             onClick={handleVerify}
-            className="w-[340px] md:w-[440px] bg-[#0C101B] hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition-colors duration-200"
+            className="w-[340px] md:w-[440px] 2xl:w-[550px] bg-[#0C101B] hover:bg-[#0C101B]/95 text-white font-semibold py-2 2xl:py-3 rounded-lg transition-colors duration-200"
           >
             Verify email
           </button>
@@ -132,11 +132,11 @@ const OtpInput: React.FC<OtpInputProps> = ({
 
         {/* Resend Link */}
         <div className="text-center mb-4">
-          <p className="text-gray-600 text-sm">
+          <p className="text-gray-600 text-sm 2xl:text-[16px]">
             Didn't receive the email?{' '}
             <button
               onClick={onResend}
-              className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
+              className="text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200 2xl:text-[16px]"
             >
               Click to resend
             </button>

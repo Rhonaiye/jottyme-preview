@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useSignupStore } from "@/store/signup";
 
 interface WorkspaceSetupProps {
   userName?: string;
@@ -9,7 +10,8 @@ const WorkspaceSetup: React.FC<WorkspaceSetupProps> = ({
   userName = "Samuel",
   onSubmit = () => {},
 }) => {
-  const [workspaceName, setWorkspaceName] = useState("Teacher");
+  const { workspaceName, setWorkspaceName } = useSignupStore()
+
   const [selectedRole, setSelectedRole] = useState("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
