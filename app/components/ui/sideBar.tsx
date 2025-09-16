@@ -15,6 +15,8 @@ import {
   Sun,
   Moon,
   Search,
+  Menu,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -22,9 +24,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen w-full bg-white text-black dark:bg-black dark:text-white">
       <Sidebar />
-      <div className="flex flex-col flex-1">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-3 sm:p-6">
+          {children}
+        </main>
       </div>
     </div>
   );
@@ -32,6 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
 function Sidebar() {
   const pathname = usePathname();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const menuItems = [
     { name: "Dashboard", icon: Home, href: "/dashboard" },
@@ -47,8 +52,73 @@ function Sidebar() {
     { name: "Help & Feedback", icon: HelpCircle, href: "/help" },
   ];
 
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Prevent scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isMobileMenuOpen]);
+
   return (
-    <aside className="h-screen w-64 xl:w-[280px] bg-[#171717] dark:bg-[#171717] text-white flex flex-col p-4 border-r border-[#2E2E2E]">
+    <>
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex h-screen w-64 xl:w-[280px] bg-[#171717] dark:bg-[#171717] text-white flex-col p-4 border-r border-[#2E2E2E]">
+        <SidebarContent menuItems={menuItems} bottomItems={bottomItems} pathname={pathname} />
+      </aside>
+
+      {/* Mobile Menu Button - Only visible on mobile */}
+      <button
+        onClick={() => setIsMobileMenuOpen(true)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-[#171717] text-white border border-[#2E2E2E]"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50" 
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          
+          {/* Sidebar */}
+          <aside className="relative w-80 max-w-[85vw] h-full bg-[#171717] text-white flex flex-col p-4 border-r border-[#2E2E2E]">
+            {/* Close button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-4 right-4 p-2 rounded-lg hover:bg-[#262626]"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            
+            <SidebarContent menuItems={menuItems} bottomItems={bottomItems} pathname={pathname} />
+          </aside>
+        </div>
+      )}
+    </>
+  );
+}
+
+function SidebarContent({ menuItems, bottomItems, pathname }: {
+  menuItems: any[],
+  bottomItems: any[],
+  pathname: string
+}) {
+  return (
+    <>
       {/* Top section: take remaining space above bottom area */}
       <div className="flex-1">
         <h1 className="text-2xl font-bold mb-6">Jottyme</h1>
@@ -80,7 +150,7 @@ function Sidebar() {
         <div className="px-1 flex-1 flex flex-col gap-5 xl:gap-7">
           {/* Profile */}
           <div className="pt-6">
-            <div className="flex items-center gap-3  rounded-lg bg-[#222222] border-1 border-[#2E2E2E] p-3">
+            <div className="flex items-center gap-3 rounded-lg bg-[#222222] border-1 border-[#2E2E2E] p-3">
               <div className="h-10 w-10 rounded-full bg-[#222222] flex items-center justify-center font-bold">
                 S
               </div>
@@ -89,8 +159,6 @@ function Sidebar() {
                 <p className="text-sm text-gray-300">Product Designer</p>
               </div>
             </div>
-
-           
           </div>
 
           {/* Bottom links */}
@@ -113,7 +181,7 @@ function Sidebar() {
           </div>
         </div>
       </div>
-    </aside>
+    </>
   );
 }
 
@@ -129,9 +197,9 @@ function Navbar() {
   }, [darkMode]);
 
   return (
-    <header className="h-16 py-6 flex items-center justify-between px-6 bg-[#171717] border-b border-[#2E2E2E] text-white">
+    <header className="h-16 py-6 flex items-center justify-between px-3 sm:px-6 bg-[#171717] border-b border-[#2E2E2E] text-white">
       {/* Left: Search */}
-      <div className="flex items-center flex-1 max-w-md relative">
+      <div className="flex items-center flex-1 max-w-md relative ml-12 lg:ml-0">
         <Search className="absolute left-4 top-1/2 text-[#A1A1A1] -translate-y-1/2 h-4.5 w-4.5" />
         <input
           type="text"
@@ -141,7 +209,7 @@ function Navbar() {
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {/* Dark/Light toggle */}
         <button
           onClick={() => setDarkMode(!darkMode)}
