@@ -16,6 +16,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface BrandingProps {
   onBack?: () => void;
@@ -436,6 +437,7 @@ const BrandingPage = ()=> {
   return (
     <SidebarLayout>
         <Branding />
+        <JottyAIButton/>
     </SidebarLayout>
   )
 }

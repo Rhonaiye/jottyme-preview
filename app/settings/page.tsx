@@ -28,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { useTheme } from '@/providers/usetheme';
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 type SettingsTab = 'profile' | 'notifications' | 'appearance' | 'security' | 'billing';
 type Theme = 'light' | 'dark' | 'system';
@@ -675,6 +676,7 @@ function SettingsPage() {
   return (
    <SidebarLayout>
       <Settings/>
+      <JottyAIButton/>
    </SidebarLayout>
   )
 }

@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Skeleton } from '@/components/ui/skeleton';
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface AnalyticsProps {
   onBack?: () => void;
@@ -559,6 +560,7 @@ const AnalyticsPage = ()=> {
   return (
    <SidebarLayout>
       <Analytics/>
+      <JottyAIButton/>
    </SidebarLayout>
   )
 }

@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ShareModal } from '@/components/modals/shareModal';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface ProjectData {
   id: string;
@@ -559,6 +560,7 @@ const ProjectsPage = ()=> {
   return (
     <SidebarLayout>
        <MyProjects/>
+       <JottyAIButton/>
     </SidebarLayout>
   )
 }

@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface HelpItem {
   id: string;
@@ -423,6 +424,7 @@ const HelpFeedbackPage = ()=> {
   return (
     <SidebarLayout>
         <HelpFeedback/>
+        <JottyAIButton/>
     </SidebarLayout>
   )
 }

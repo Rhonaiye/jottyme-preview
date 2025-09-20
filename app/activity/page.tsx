@@ -14,6 +14,7 @@ import {
   ChevronUp
 } from 'lucide-react';
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface ActivityItem {
   id: string;
@@ -434,6 +435,7 @@ const ActivityPage = ()=> {
   return (
    <SidebarLayout>
      <Activity/>
+     <JottyAIButton/>
    </SidebarLayout>
   )
 }

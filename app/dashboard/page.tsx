@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 import SidebarLayout from '@/components/ui/sideBar';
+import { JottyAIButton } from '@/components/ui/jottyAiButton';
 
 interface ProjectItem {
   id: string;
@@ -675,6 +676,7 @@ function DashboardPage() {
   return (
     <SidebarLayout>
         <Dashboard/>
+        <JottyAIButton/>
     </SidebarLayout>
   )
 }
