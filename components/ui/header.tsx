@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { ThemeSwitcher } from './themeSwitcher';
 import { useTheme } from '@/providers/usetheme';
 import { NotificationsModal } from '../modals/notificationsModal';
+import { ProfileModal } from '../modals/profileModal';
 
 interface HeaderProps {
   onSearchClick?: () => void;
-  onAvatarClick?: () => void;
   onNavigateToSettings?: () => void;
   onNavigateToBilling?: () => void;
   onNavigateToPrivacy?: () => void;
@@ -21,8 +21,7 @@ interface HeaderProps {
 }
 
 export function Header({ 
-  onSearchClick, 
-  onAvatarClick,
+  onSearchClick,
   onNavigateToSettings,
   onNavigateToBilling,
   onNavigateToPrivacy,
@@ -35,6 +34,7 @@ export function Header({
 }: HeaderProps = {}) {
   const { theme, setTheme } = useTheme();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (
     <>
@@ -94,7 +94,7 @@ export function Header({
               className="w-8 h-8 rounded-full border-2 border-[rgba(106,73,252,0.2)] overflow-hidden cursor-pointer hover:border-[rgba(106,73,252,0.5)] transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={onAvatarClick}
+              onClick={() => setIsProfileOpen(true)}
             >
               <img 
                 src="https://api.dicebear.com/7.x/avataaars/svg?seed=Samuel" 
@@ -110,6 +110,16 @@ export function Header({
       <NotificationsModal 
         isOpen={isNotificationsOpen} 
         onClose={() => setIsNotificationsOpen(false)} 
+      />
+
+      {/* Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        onNavigateToSettings={onNavigateToSettings}
+        onNavigateToBilling={onNavigateToBilling}
+        onNavigateToPrivacy={onNavigateToPrivacy}
+        onNavigateToNotifications={onNavigateToNotifications}
       />
     </>
   );

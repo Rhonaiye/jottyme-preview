@@ -40,8 +40,6 @@ export function Layout({
     <div className={`flex-1 bg-background flex flex-col h-full transition-colors duration-300 ${className}`}>
       <Header 
         onSearchClick={onSearchClick}
-        onNotificationsClick={onNotificationsClick}
-        onAvatarClick={onAvatarClick}
         onNavigateToSettings={onNavigateToSettings}
         onNavigateToBilling={onNavigateToBilling}
         onNavigateToPrivacy={onNavigateToPrivacy}
