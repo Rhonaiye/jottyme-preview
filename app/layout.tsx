@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/providers/usetheme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,12 +33,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${BricolageFont.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <ThemeProvider>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${BricolageFont.variable}`}>
+        <body className="bg-background font-sans text-foreground transition-colors duration-300">
+          {children}
+        </body>
+      </html>
+    </ThemeProvider>
   );
 }

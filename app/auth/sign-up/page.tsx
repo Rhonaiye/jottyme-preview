@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import SignupForm from "@/app/components/ui/signupForm";
-import OtpInput from "@/app/components/ui/otpInput";
-import Logo from "@/app/components/ui/appLogo";
-import WorkspaceSetup from "@/app/components/ui/workspaceSetup";
+import SignupForm from "@/components/ui/signupForm";
+import OtpInput from "@/components/ui/otpInput";
+import Logo from "@/components/ui/appLogo";
+import WorkspaceSetup from "@/components/ui/workspaceSetup";
 import { useSignupStore } from "@/store/signup";
 
 export default function SignUpPage() {
