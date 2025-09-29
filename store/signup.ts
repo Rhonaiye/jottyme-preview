@@ -1,18 +1,18 @@
-// app/stores/signupStore.ts
 import { create } from "zustand";
 
 interface SignupState {
-  step: number;            // current step in the signup flow
-  fullName: string;        // user's full name
-  email: string;           // user's email
-  password: string;        // user's password
-  otp: string;             // OTP for verification
-  workspaceName: string;   // workspace name for step 3
-  role: string;            // role for step 3
+  step: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  otp: string;
+  workspaceName: string;
+  role: string;
 
-  // Actions
   setStep: (step: number) => void;
-  setFullName: (name: string) => void;
+  setFirstName: (firstName: string) => void;
+  setLastName: (lastName: string) => void;
   setEmail: (email: string) => void;
   setPassword: (password: string) => void;
   setOtp: (otp: string) => void;
@@ -23,7 +23,8 @@ interface SignupState {
 
 export const useSignupStore = create<SignupState>((set) => ({
   step: 1,
-  fullName: "",
+  firstName: "",
+  lastName: "",
   email: "",
   password: "",
   otp: "",
@@ -31,7 +32,8 @@ export const useSignupStore = create<SignupState>((set) => ({
   role: "",
 
   setStep: (step) => set({ step }),
-  setFullName: (fullName) => set({ fullName }),
+  setFirstName: (firstName) => set({ firstName }),
+  setLastName: (lastName) => set({ lastName }),
   setEmail: (email) => set({ email }),
   setPassword: (password) => set({ password }),
   setOtp: (otp) => set({ otp }),
@@ -40,7 +42,8 @@ export const useSignupStore = create<SignupState>((set) => ({
   reset: () =>
     set({
       step: 1,
-      fullName: "",
+      firstName: "",
+      lastName: "",
       email: "",
       password: "",
       otp: "",
@@ -48,3 +51,4 @@ export const useSignupStore = create<SignupState>((set) => ({
       role: "",
     }),
 }));
+

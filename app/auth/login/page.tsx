@@ -111,7 +111,7 @@ const SignIn = () => {
         <p className="text-center text-black text-xs md:text-sm mt-6">
           Don&apos;t have an account?{" "}
           <Link
-            href="#"
+            href="/auth/sign-up"
             className="text-purple-600 font-medium hover:underline cursor-pointer"
           >
             Sign up here
