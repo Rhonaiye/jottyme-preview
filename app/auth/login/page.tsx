@@ -33,7 +33,7 @@ const SignIn = () => {
     setError(null);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/login`, {
+      const res = await fetch(`https://jottymebackend-production.up.railway.app/api/user/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

@@ -42,7 +42,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true, error: null });
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/profile`, {
+      const res = await fetch(`https://jottymebackend-production.up.railway.app/api/user/profile`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

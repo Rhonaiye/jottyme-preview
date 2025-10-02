@@ -33,7 +33,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ handleSignup }) => {
     setIsLoading(true);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/signup`, {
+      const res = await fetch(`https://jottymebackend-production.up.railway.app/api/user/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
