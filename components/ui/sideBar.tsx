@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTheme } from '@/providers/usetheme';
+import { useAuthStore } from '@/store/authStore';
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -40,6 +41,7 @@ const bottomNavigation = [
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { theme, setTheme, actualTheme } = useTheme();
+  const { user, logout } = useAuthStore();
 
   // Prevent scroll when mobile menu is open
   useEffect(() => {
@@ -192,6 +194,9 @@ function SidebarContent({
   pathname: string,
   onMobileClose?: () => void
 }) {
+
+   const { user, logout } = useAuthStore();
+
   return (
     <>
       {/* Top section: take remaining space above bottom area */}
@@ -254,7 +259,7 @@ function SidebarContent({
                 />
               </div>
               <div className="flex-1">
-                <div className="text-gray-900 dark:text-white font-medium text-[14px]">Samuel</div>
+                <div className="text-gray-900 dark:text-white font-medium text-[14px]">{user?.firstname || 'loading'}</div>
                 <div className="text-gray-600 dark:text-gray-400 text-[12px]">Product Designer</div>
               </div>
             </Link>
