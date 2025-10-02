@@ -17,6 +17,7 @@ import {
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { useTheme } from '@/providers/usetheme';
+import { useAuthStore} from '@/store/authStore';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -29,6 +30,7 @@ interface ProfileModalProps {
 
 export function ProfileModal({ isOpen, onClose, onNavigateToSettings, onNavigateToBilling, onNavigateToPrivacy, onNavigateToNotifications }: ProfileModalProps) {
   const { theme, setTheme } = useTheme();
+  const { user, hydrate } = useAuthStore();
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -97,7 +99,7 @@ export function ProfileModal({ isOpen, onClose, onNavigateToSettings, onNavigate
               </div>
               
               <div className="flex-1">
-                <h3 className="text-foreground font-semibold">Samuel Chen</h3>
+                <h3 className="text-foreground font-semibold">{user?.firstname}</h3>
                 <p className="text-muted-foreground text-sm truncate">Product Designer</p>
               </div>
             </div>

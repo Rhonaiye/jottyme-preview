@@ -6,6 +6,10 @@ import { FiMail, FiLock } from "react-icons/fi";
 import { AiFillEye, AiFillEyeInvisible, AiOutlineUser } from "react-icons/ai";
 import Link from "next/link";
 import { useSignupStore } from "@/store/signup";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import toast from "react-hot-toast";
+import { useAuthStore } from "@/store/authStore";
 
 interface SignupFormProps {
   handleSignup: () => void;
@@ -14,23 +18,54 @@ interface SignupFormProps {
 const SignupForm: React.FC<SignupFormProps> = ({ handleSignup }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { setAuth  } = useAuthStore();
 
   const { email, firstName, lastName, password, setEmail, setPassword, setFirstName, setLastName } =
     useSignupStore();
 
   const handleGoogleSignIn = () => {
-    alert("Google Sign-In simulated ✅");
-    console.log("Google sign-in clicked");
+    toast.success("Google Sign-In simulated ✅");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+
     try {
-      await handleSignup();
-    } catch (err) {
-      console.log(err);
-      throw new Error();
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          firstname: firstName,
+          lastname: lastName,
+          email,
+          password,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.log(errorData)
+        throw new Error(errorData.message || "Signup failed");
+      }
+
+      const resData = await res.json();
+      const userData = {
+        firstname: resData.data.user.firstname,
+        lastname: resData.data.user.lastname,
+        email: resData.data.user.email,
+        _id: resData.data.user._id,
+      }
+      setAuth(resData.data.token, userData);
+
+      toast.success("Account created successfully 🎉");
+      router.push("/dashboard");
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      toast.error(err.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }

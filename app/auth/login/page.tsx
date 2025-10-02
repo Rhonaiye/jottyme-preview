@@ -5,14 +5,64 @@ import { FcGoogle } from "react-icons/fc";
 import { FiMail, FiLock } from "react-icons/fi";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import toast from "react-hot-toast";
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  // Simulated Google Sign-In
+  // Zustand store
+  const { setAuth } = useAuthStore();
+
+  // Google Sign-In simulation
   const handleGoogleSignIn = () => {
     alert("Google Sign-In simulated ✅");
     console.log("Google sign-in clicked");
+  };
+
+  // Login API call
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || "Login failed");
+      }
+
+      const data = await res.json();
+      toast.success("Logged in successfully");
+
+      const token = data.data.token
+      const user = {
+        _id: data.data.user._id,
+        email: data.data.user.email,
+        firstname: data.data.user.firstname,
+        lastname: data.data.user.lastname,
+      }
+      setAuth(token, user);
+
+      // Redirect to dashboard
+      router.push("/dashboard")
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,6 +114,8 @@ const SignIn = () => {
             <input
               type="email"
               placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full p-2 text-base md:text-sm text-black placeholder:text-gray-500 outline-none"
             />
           </div>
@@ -76,6 +128,8 @@ const SignIn = () => {
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Min 8 character password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full p-2 text-base md:text-sm text-black placeholder:text-gray-500 outline-none"
             />
             <button
@@ -102,9 +156,18 @@ const SignIn = () => {
           </Link>
         </div>
 
+        {/* Error */}
+        {error && (
+          <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+        )}
+
         {/* Sign In Button */}
-        <button className="w-full bg-black text-white py-2 rounded-lg font-medium border border-gray-200 hover:bg-black/95 hover:opacity-90 ease-in-out duration-300 transition cursor-pointer text-sm md:text-base">
-          Sign in
+        <button
+          onClick={handleSignIn}
+          disabled={loading}
+          className="w-full bg-black text-white py-2 rounded-lg font-medium border border-gray-200 hover:bg-black/95 hover:opacity-90 ease-in-out duration-300 transition cursor-pointer text-sm md:text-base"
+        >
+          {loading ? "Signing in..." : "Sign in"}
         </button>
 
         {/* Sign Up Link */}

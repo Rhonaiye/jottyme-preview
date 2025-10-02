@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Layout } from '@/components/ui/layout';
 import { 
@@ -18,7 +18,8 @@ import {
   Check,
   Upload,
   ChevronRight,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Loader2 // Add Loader2 for potential spinner, but using fuller skeleton
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +30,7 @@ import { toast } from 'sonner';
 import { useTheme } from '@/providers/usetheme';
 import SidebarLayout from '@/components/ui/sideBar';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
+import { useAuthStore } from '@/store/authStore';
 
 type SettingsTab = 'profile' | 'notifications' | 'appearance' | 'security' | 'billing';
 type Theme = 'light' | 'dark' | 'system';
@@ -131,12 +133,30 @@ function Settings({
     weeklyDigest: false,
     emailNotifications: true,
   });
+  const { user, loading:isLoading } = useAuthStore(); // Assume your store has isLoading; add if not (e.g., derive from !user && !error)
+  
+  // NEW: Initialize with fallbacks to handle async loading
   const [profileData, setProfileData] = useState({
-    firstName: 'Samuel',
-    lastName: 'Chen',
-    email: 'samuel@jottyme.app',
+    firstName: '',
+    lastName: '',
+    email: '',
     role: 'Product Designer'
   });
+  
+  // NEW: Track if user has edited local state (to avoid overwriting edits)
+  const [hasEdited, setHasEdited] = useState(false);
+
+  // NEW: Sync profileData with user changes from store (e.g., on login/reload)
+  useEffect(() => {
+    if (user && !hasEdited) {
+      setProfileData({
+        firstName: user.firstname || '',
+        lastName: user.lastname || '',
+        email: user.email || '',
+        role: 'Product Designer' // Keep hardcoded or pull from user if available
+      });
+    }
+  }, [user, hasEdited]); // Re-run when user changes, but skip if edited locally
 
   const handleNavigateToSettings = () => {
     // Already in settings, just close any modals
@@ -166,7 +186,16 @@ function Settings({
     toast.success(`${notificationNames[key]} ${value ? 'enabled' : 'disabled'}`);
   };
 
+  // UPDATED: Mark as edited when user types (prevents auto-sync from overwriting)
+  const handleProfileChange = (field: keyof typeof profileData, value: string) => {
+    setHasEdited(true);
+    setProfileData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleSaveProfile = () => {
+    // TODO: Call your API/store to update user
+    // e.g., useAuthStore.getState().updateUser(profileData);
+    setHasEdited(false); // Reset flag after save
     toast.success('Profile updated successfully!');
   };
 
@@ -174,6 +203,103 @@ function Settings({
     setTheme(theme);
     toast.success(`Theme changed to ${theme}`);
   };
+
+  // UPDATED: Fuller skeleton to mimic layout
+  const LoadingSkeleton = () => (
+    <div className="flex-1 overflow-auto">
+      <div className="max-w-5xl mx-auto p-6 lg:p-8">
+        {/* Header Skeleton */}
+        <div className="mb-8 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-muted rounded-xl animate-pulse" />
+            <div className="space-y-2">
+              <div className="h-8 bg-muted rounded w-48 animate-pulse" />
+              <div className="h-4 bg-muted rounded w-64 animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Layout Skeleton */}
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Sidebar Navigation Skeleton */}
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="bg-card border border-border rounded-xl p-2 space-y-2">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-5 h-5 bg-muted rounded animate-pulse flex-shrink-0" />
+                  <div className="flex-1 space-y-1">
+                    <div className="h-4 bg-muted rounded w-full animate-pulse" />
+                    <div className="h-3 bg-muted rounded w-3/4 animate-pulse" />
+                  </div>
+                  <div className="w-4 h-4 bg-muted rounded animate-pulse flex-shrink-0" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Content Skeleton */}
+          <div className="flex-1 min-w-0 space-y-6">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="mb-6 space-y-2">
+                <div className="h-6 bg-muted rounded w-40 animate-pulse" />
+                <div className="h-4 bg-muted rounded w-80 animate-pulse" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 space-y-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 bg-muted rounded w-24 animate-pulse" />
+                    <div className="h-10 bg-muted rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3 mt-6">
+                <div className="h-10 bg-muted rounded px-6 animate-pulse flex-1" />
+                <div className="h-10 bg-muted rounded px-4 animate-pulse" />
+              </div>
+            </div>
+
+            {/* Additional content placeholders */}
+            <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+              <div className="h-6 bg-muted rounded w-32 animate-pulse" />
+              <div className="space-y-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-4 border-b border-border last:border-b-0">
+                    <div className="space-y-1">
+                      <div className="h-4 bg-muted rounded w-48 animate-pulse" />
+                      <div className="h-3 bg-muted rounded w-64 animate-pulse" />
+                    </div>
+                    <div className="w-10 h-5 bg-muted rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // NEW: Show loading skeleton while fetching user
+  if (isLoading) {
+    return (
+      <Layout
+        onNavigateToSettings={handleNavigateToSettings}
+        onNavigateToBilling={handleNavigateToBilling}
+        onNavigateToPrivacy={handleNavigateToPrivacy}
+        onNavigateToNotifications={handleNavigateToNotifications}
+        onMobileMenuClick={onMobileMenuClick}
+        onSearchClick={onSearchClick}
+        onNotificationsClick={onNotificationsClick}
+        onAvatarClick={onAvatarClick}
+        onNavigateToMyProjects={onNavigateToMyProjects}
+        onNavigateToAnalytics={onNavigateToAnalytics}
+        onNavigateToActivity={onNavigateToActivity}
+        onProjectClick={onNavigateToMyProjects}
+      >
+        <LoadingSkeleton />
+      </Layout>
+    );
+  }
 
   const StatusBadge = ({ status }: { status: string }) => {
     const colors = {
@@ -261,32 +387,36 @@ function Settings({
             <Label className="text-foreground">First Name</Label>
             <Input 
               value={profileData.firstName}
-              onChange={(e) => setProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+              onChange={(e) => handleProfileChange('firstName', e.target.value)}
               className="bg-input-background border-border text-foreground"
+              placeholder="Enter first name"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-foreground">Last Name</Label>
             <Input 
               value={profileData.lastName}
-              onChange={(e) => setProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+              onChange={(e) => handleProfileChange('lastName', e.target.value)}
               className="bg-input-background border-border text-foreground"
+              placeholder="Enter last name"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-foreground">Email</Label>
             <Input 
               value={profileData.email}
-              onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+              onChange={(e) => handleProfileChange('email', e.target.value)}
               className="bg-input-background border-border text-foreground"
+              placeholder="Enter email"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-foreground">Role</Label>
             <Input 
               value={profileData.role}
-              onChange={(e) => setProfileData(prev => ({ ...prev, role: e.target.value }))}
+              onChange={(e) => handleProfileChange('role', e.target.value)}
               className="bg-input-background border-border text-foreground"
+              placeholder="Enter role"
             />
           </div>
         </div>
@@ -297,7 +427,22 @@ function Settings({
           >
             Save Changes
           </Button>
-          <Button variant="ghost" className="text-foreground hover:bg-accent">
+          <Button 
+            variant="ghost" 
+            className="text-foreground hover:bg-accent"
+            onClick={() => {
+              setHasEdited(false); // Reset to re-sync from user
+              // Optionally re-sync immediately
+              if (user) {
+                setProfileData({
+                  firstName: user.firstname || '',
+                  lastName: user.lastname || '',
+                  email: user.email || '',
+                  role: 'Product Designer'
+                });
+              }
+            }}
+          >
             Cancel
           </Button>
         </div>
@@ -669,8 +814,6 @@ function Settings({
     </Layout>
   );
 }
-
-
 
 function SettingsPage() {
   return (

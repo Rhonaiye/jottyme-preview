@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/usetheme";
+import { Toaster } from "react-hot-toast";
+import AuthProvider from "@/providers/authProvider"; // 👈 new wrapper
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,14 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const BricolageFont = Bricolage_Grotesque({ 
-  subsets: ['latin'], 
-  weight: ['400', '500', '700'], 
-  display: 'swap', 
-  variable: '--font-bricolage' 
+const BricolageFont = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+  variable: "--font-bricolage",
 });
-
-
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -29,14 +29,30 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <ThemeProvider>
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${BricolageFont.variable}`}>
+      <html
+        lang="en"
+        className={`${geistSans.variable} ${geistMono.variable} ${BricolageFont.variable}`}
+      >
         <body className="bg-background font-sans text-foreground transition-colors duration-300">
-          {children}
+          <AuthProvider>
+            {children}
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                style: {
+                  fontSize: "14px",
+                  borderRadius: "8px",
+                  background: "#333",
+                  color: "#fff",
+                },
+              }}
+            />
+          </AuthProvider>
         </body>
       </html>
     </ThemeProvider>
