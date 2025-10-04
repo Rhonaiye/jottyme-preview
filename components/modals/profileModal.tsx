@@ -18,6 +18,7 @@ import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { useTheme } from '@/providers/usetheme';
 import { useAuthStore} from '@/store/authStore';
+import { useRouter } from 'next/navigation';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -30,7 +31,8 @@ interface ProfileModalProps {
 
 export function ProfileModal({ isOpen, onClose, onNavigateToSettings, onNavigateToBilling, onNavigateToPrivacy, onNavigateToNotifications }: ProfileModalProps) {
   const { theme, setTheme } = useTheme();
-  const { user, hydrate } = useAuthStore();
+  const { user, hydrate, logout  } = useAuthStore();
+  const router = useRouter();
 
   const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
     setTheme(newTheme);
@@ -57,9 +59,9 @@ export function ProfileModal({ isOpen, onClose, onNavigateToSettings, onNavigate
   };
 
   const handleSignOut = () => {
-    // Handle sign out logic
-    console.log('Signing out...');
+    logout();
     onClose();
+    router.push('/auth/login');
   };
 
   if (!isOpen) return null;
