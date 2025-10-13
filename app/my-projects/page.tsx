@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ShareModal } from '@/components/modals/shareModal';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
+import { NewProjectModal } from '@/components/modals/newProjectModal';
 
 interface ProjectData {
   id: string;
@@ -122,7 +123,6 @@ const createProjectData = (project: ProjectData) => {
 interface MyProjectsProps {
   onBack?: () => void;
   onProjectClick?: (project: any) => void;
-  onNewProjectClick?: () => void;
   onMobileMenuClick?: () => void;
   onSearchClick?: () => void;
   onNotificationsClick?: () => void;
@@ -139,7 +139,6 @@ interface MyProjectsProps {
 function MyProjects({ 
   onBack, 
   onProjectClick, 
-  onNewProjectClick, 
   onMobileMenuClick,
   onSearchClick,
   onNotificationsClick,
@@ -156,6 +155,7 @@ function MyProjects({
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [shareModalProject, setShareModalProject] = useState<ProjectData | null>(null);
+  const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
 
   const filteredProjects = mockProjects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -200,7 +200,7 @@ function MyProjects({
           whileTap={{ scale: 0.98 }}
         >
           <Button 
-            onClick={onNewProjectClick}
+            onClick={()=>setIsNewProjectModalOpen(true)}
             className="bg-[#6a49fc] hover:bg-[#5a3efc] text-white h-9 sm:h-10 px-4 sm:px-6 rounded-lg shadow-lg hover:shadow-[0_8px_30px_rgb(106,73,252,0.3)] transition-all duration-200 font-medium text-sm"
           >
             <Plus className="h-4 w-4 mr-1 sm:mr-2" />
@@ -278,6 +278,12 @@ function MyProjects({
             type: shareModalProject.type
           }}
         />
+      )}
+
+      {/* New Project Modal */}
+      {isNewProjectModalOpen && (
+        <NewProjectModal onClose={()=>setIsNewProjectModalOpen(false)} isOpen={isNewProjectModalOpen}/>
+
       )}
     </PageHeader>
   );

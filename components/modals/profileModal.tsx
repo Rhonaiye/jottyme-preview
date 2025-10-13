@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+'use client'
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 

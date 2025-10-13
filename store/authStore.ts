@@ -55,8 +55,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         firstname: resData.data.firstname,
         lastname: resData.data.lastname,
       };
-
-      set({ token, user, loading: false });
+       
+     setTimeout(()=>{
+       set({ token, user, loading: false });
+     }, 500)
     } catch (err: any) {
       console.error("Hydrate failed:", err);
       Cookies.remove("token");

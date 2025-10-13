@@ -1,4 +1,5 @@
-import { useState } from 'react';
+'use client'
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, 
@@ -10,6 +11,7 @@ import {
   Check,
   Bell
 } from 'lucide-react';
+import Cookies from 'js-cookie';
 import { Button } from '../ui/button';
 
 interface NotificationsModalProps {
@@ -27,48 +29,40 @@ interface Notification {
   project?: string;
 }
 
-const mockNotifications: Notification[] = [
-  {
-    id: '1',
-    type: 'success',
-    title: 'Project exported successfully',
-    message: 'Website Redesign project has been exported to PDF.',
-    timestamp: '2 min ago',
-    isRead: false,
-    project: 'Website Redesign'
-  },
-  {
-    id: '2',
-    type: 'activity',
-    title: 'New comment on project',
-    message: 'Sarah Johnson left a comment on the homepage design.',
-    timestamp: '1 hour ago',
-    isRead: false,
-    project: 'E-commerce App'
-  },
-  {
-    id: '3',
-    type: 'info',
-    title: 'Project shared with you',
-    message: 'Alex Chen shared "Mobile App Redesign" project with you.',
-    timestamp: '3 hours ago',
-    isRead: true,
-    project: 'Mobile App Redesign'
-  },
-  {
-    id: '4',
-    type: 'activity',
-    title: 'Project status updated',
-    message: 'Landing Page project has been marked as completed.',
-    timestamp: '1 day ago',
-    isRead: true,
-    project: 'Landing Page'
-  }
-];
-
 export function NotificationsModal({ isOpen, onClose }: NotificationsModalProps) {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  const [loading, setLoading] = useState(false);
+
+ useEffect(() => {
+  if (isOpen) {
+    setLoading(true);
+
+    const token = Cookies.get("token")
+
+    fetch("https://jottymebackend-production.up.railway.app/api/user/notification", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: token ? `Bearer ${token}` : "",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("Failed to fetch notifications");
+        return response.json();
+      })
+      .then((data) => {
+        console.log("Fetched notifications data:", data);
+        setNotifications(data);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Error fetching notifications:", error);
+        setLoading(false);
+      });
+  }
+}, [isOpen]);
+
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
   const filteredNotifications = filter === 'unread' 
@@ -203,7 +197,11 @@ export function NotificationsModal({ isOpen, onClose }: NotificationsModalProps)
 
           {/* Notifications List */}
           <div className="max-h-[400px] overflow-y-auto">
-            {filteredNotifications.length === 0 ? (
+            {loading ? (
+              <div className="p-8 text-center">
+                <p className="text-muted-foreground text-[14px]">Loading notifications...</p>
+              </div>
+            ) : filteredNotifications.length === 0 ? (
               <div className="p-8 text-center">
                 <div className="w-12 h-12 mx-auto mb-4 bg-muted rounded-[12px] flex items-center justify-center">
                   <CheckCircle className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />

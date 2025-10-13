@@ -25,9 +25,11 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import SidebarLayout from '@/components/ui/sideBar';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
+import { useAuthStore } from '@/store/authStore';
 
 interface ProjectItem {
   id: string;
@@ -210,7 +212,7 @@ interface DashboardProps {
   onNewProjectClick?: () => void;
 }
 
- function Dashboard({ 
+function Dashboard({ 
   onImportClick, 
   onUploadClick, 
   onMyProjectsClick, 
@@ -227,6 +229,7 @@ interface DashboardProps {
 }: DashboardProps) {
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const { loading } = useAuthStore();
 
   // Monitor theme changes
   useEffect(() => {
@@ -246,6 +249,185 @@ interface DashboardProps {
 
     return () => observer.disconnect();
   }, []);
+
+  if (loading) {
+    return (
+      <PageHeader 
+        title="Dashboard" 
+        description="Your collaboration hub for feedback and design reviews"
+        maxWidth="max-w-[1400px]"
+        onMobileMenuClick={onMobileMenuClick}
+        onSearchClick={onSearchClick}
+        onNotificationsClick={onNotificationsClick}
+        onAvatarClick={onAvatarClick}
+        onNavigateToSettings={onNavigateToSettings}
+        onNavigateToAnalytics={onNavigateToAnalytics}
+        onNavigateToActivity={onNavigateToActivity}
+        onProjectClick={onProjectClick}
+      >
+        {/* Skeleton for Interactive Demo Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="relative mb-12 overflow-hidden"
+        >
+          <Card className="border border-border bg-gradient-to-br from-[#6a49fc]/5 via-transparent to-slate-500/5 backdrop-blur-sm relative z-10">
+            <CardContent className="md:p-12 pt-[32px] pr-[32px] pb-[50px] pl-[32px]">
+              <div className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center">
+                {/* Left Content Skeleton */}
+                <div className="space-y-6">
+                  <Skeleton className="h-4 w-32" />
+                  <div className="space-y-4">
+                    <Skeleton className="h-9 w-4/5" />
+                    <Skeleton className="h-6 w-3/4" />
+                    <div className="flex gap-4">
+                      <Skeleton className="h-3 w-20" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-10 w-36" />
+                  </div>
+                </div>
+
+                {/* Right Interactive Preview Skeleton */}
+                <div className="relative">
+                  <div className="bg-card rounded-xl border border-border shadow-2xl overflow-hidden">
+                    {/* Mock Browser Header Skeleton */}
+                    <div className="bg-muted h-8 flex items-center px-4 gap-2">
+                      <div className="flex gap-1">
+                        <div className="w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                        <div className="w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                        <div className="w-2 h-2 bg-slate-300 dark:bg-slate-600 rounded-full animate-pulse" />
+                      </div>
+                      <Skeleton className="h-3 w-full flex-1 text-center" />
+                    </div>
+                    
+                    {/* Mock Website Preview Skeleton */}
+                    <div className="relative h-48 bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 p-6 space-y-4">
+                      <Skeleton className="h-4 w-3/4" />
+                      <Skeleton className="h-3 w-1/2" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-20 rounded" />
+                        <Skeleton className="h-8 w-16 rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Skeleton for Get Started Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="mb-12"
+        >
+          <div className="text-center mb-8 space-y-2">
+            <Skeleton className="h-7 w-48 mx-auto" />
+            <Skeleton className="h-4 w-64 mx-auto" />
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {[1, 2].map((i) => (
+              <Card key={i} className="border-border">
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-5 w-32" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Skeleton for Value Proposition Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="mb-12"
+        >
+          <div className="text-center mb-8 space-y-2">
+            <Skeleton className="h-7 w-48 mx-auto" />
+            <Skeleton className="h-4 w-64 mx-auto" />
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="border-border h-full">
+                <CardContent className="p-6 space-y-4">
+                  <Skeleton className="h-6 w-6 mx-auto" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Skeleton for Recent Projects & Activity Grid */}
+        <div className="grid lg:grid-cols-2 gap-8">
+          {/* Recent Projects Skeleton */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+              <Skeleton className="h-8 w-20" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
+                  <Skeleton className="w-10 h-10 rounded-lg" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-6 w-6" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Activity Feed Skeleton */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+              <Skeleton className="h-8 w-20" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="w-8 h-8 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </PageHeader>
+    );
+  }
 
   // Handle project clicks with real project data
   const handleProjectClick = (project: ProjectItem) => {
