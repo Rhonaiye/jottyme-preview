@@ -8,7 +8,7 @@ import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useRouter } from 'next/navigation';
-import html2canvas from 'html2canvas-pro';
+import { toPng } from 'html-to-image';
 
 
 interface WebsiteData {
@@ -57,6 +57,7 @@ export function ImportURL() {
   const [isImporting, setIsImporting] = useState(false);
   const [websiteData, setWebsiteData] = useState<WebsiteData | null>(null);
   const [isDetecting, setIsDetecting] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
   const router = useRouter();
 
   const onBack = ()=>{
@@ -224,6 +225,7 @@ export function ImportURL() {
     
     setIsDetecting(true);
     setWebsiteData(null);
+    setShowFallback(false);
     
     try {
       const data = await extractWebsiteData(inputUrl);
@@ -285,6 +287,7 @@ export function ImportURL() {
     if (newUrl !== websiteData?.url) {
       setWebsiteData(null);
       setProjectName('');
+      setShowFallback(false);
     }
   };
 
@@ -312,20 +315,50 @@ export function ImportURL() {
       formData.append('type', 'website');
       formData.append('sourceUrl', url);
 
-      // Capture preview image using html2canvas (note: may not capture cross-origin iframe content fully)
+      // Capture preview image using html-to-image (note: may not capture cross-origin iframe content fully)
       if (websiteData) {
         const previewElement = document.querySelector('.preview-content') as HTMLElement;
-        if (previewElement) {
-          const canvas = await html2canvas(previewElement, { 
-            scale: 1, 
-            useCORS: true,
-            allowTaint: true 
+        const iframeEl = previewElement?.querySelector('iframe') as HTMLIFrameElement | null;
+        const fallbackEl = previewElement?.querySelector('.iframe-fallback') as HTMLElement | null;
+
+        if (previewElement && fallbackEl) {
+          // Temporarily show fallback and hide iframe for capture
+          const wasFallbackVisible = fallbackEl.style.display !== 'none';
+          const wasIframeVisible = iframeEl ? iframeEl.style.display !== 'none' : false;
+
+          if (iframeEl) {
+            iframeEl.style.display = 'none';
+          }
+          fallbackEl.style.display = 'flex';
+
+          // Small delay to ensure render
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          const dataUrl = await toPng(previewElement, { 
+            pixelRatio: 1,
+            quality: 1,
+            skipFonts: false,
+            filter: (node: Node) => {
+              if (node.nodeName === 'IMG') {
+                const img = node as HTMLImageElement;
+                if (img.src && img.src.includes('google.com/s2/favicons')) {
+                  return false;
+                }
+              }
+              return true;
+            },
           });
-          canvas.toBlob((blob) => {
-            if (blob) {
-              formData.append('siteImagePreview', blob, 'preview.png');
-            }
-          }, 'image/png');
+
+          // Restore visibility
+          fallbackEl.style.display = wasFallbackVisible ? 'flex' : 'none';
+          if (iframeEl) {
+            iframeEl.style.display = wasIframeVisible ? 'block' : 'none';
+          }
+
+          const response = await fetch(dataUrl);
+          const blob = await response.blob();
+          formData.append('file', blob, 'preview.png');
+          console.log('Preview image captured and added to form data');
         }
       }
 
@@ -342,6 +375,7 @@ export function ImportURL() {
       }
 
       const projectData = await response.json();
+      console.log('Project created:', projectData);
       
       // Trigger confetti
       confetti({
@@ -374,6 +408,14 @@ export function ImportURL() {
     } catch (_) {
       return false;
     }
+  };
+
+  const handleIframeLoad = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    setShowFallback(false);
+  };
+
+  const handleIframeError = (e: React.SyntheticEvent<HTMLIFrameElement>) => {
+    setShowFallback(true);
   };
 
   return (
@@ -585,23 +627,16 @@ export function ImportURL() {
                         loading="lazy"
                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
                         title={`Preview of ${websiteData.siteName}`}
-                        onLoad={(e) => {
-                          // Hide fallback if iframe loads successfully
-                          const container = (e.target as HTMLIFrameElement).parentElement;
-                          const fallback = container?.querySelector('.iframe-fallback') as HTMLElement;
-                          if (fallback) fallback.style.display = 'none';
-                        }}
-                        onError={(e) => {
-                          // Hide iframe and show fallback on error
-                          (e.target as HTMLIFrameElement).style.display = 'none';
-                          const container = (e.target as HTMLIFrameElement).parentElement;
-                          const fallback = container?.querySelector('.iframe-fallback') as HTMLElement;
-                          if (fallback) fallback.style.display = 'flex';
-                        }}
+                        onLoad={handleIframeLoad}
+                        onError={handleIframeError}
+                        style={{ display: showFallback ? 'none' : 'block' }}
                       />
                       
                       {/* Professional Fallback for Blocked Websites */}
-                      <div className="iframe-fallback w-full h-full bg-gradient-to-br from-[#f8f9fa] via-[#ffffff] to-[#f1f3f4] flex items-center justify-center">
+                      <div 
+                        className="iframe-fallback w-full h-full bg-gradient-to-br from-[#f8f9fa] via-[#ffffff] to-[#f1f3f4] flex items-center justify-center"
+                        style={{ display: showFallback ? 'flex' : 'none' }}
+                      >
                         <div className="text-center space-y-6 p-8 max-w-md">
                           <div className="space-y-4">
                             {/* Website Info Header */}
@@ -631,7 +666,7 @@ export function ImportURL() {
                                   </svg>
                                 </div>
                                 <div className="text-left">
-                                  <h4 className="text-[#6a49fc] text-[14px] font-semibold mb-1">Preview Restricted</h4>
+                                  <h4 className="text-[#6a49fc] text-[14px] font-medium mb-1">Preview Restricted</h4>
                                   <p className="text-[#4a5565] text-[13px] leading-relaxed">
                                     This website has security settings that prevent iframe embedding. You can still collaborate on it - the full website will open in a new tab when needed.
                                   </p>
