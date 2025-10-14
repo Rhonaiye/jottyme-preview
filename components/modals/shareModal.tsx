@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/button';
-import { X, Share, Lock, Globe, Link, Send, Users, Copy, ChevronDown } from 'lucide-react';
+import { X, Share, Lock, Globe, Link, Send, Users, Copy, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import Cookies from 'js-cookie';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -18,8 +19,9 @@ interface ShareModalProps {
 export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
   const [isPublic, setIsPublic] = useState(true);
   const [emailInput, setEmailInput] = useState('psalmwelloladokun@gmail.com');
-  const [selectedPermission, setSelectedPermission] = useState('Can comment');
+  const [selectedPermission, setSelectedPermission] = useState('Can edit');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isInviting, setIsInviting] = useState(false);
 
   const permissions = [
     { value: 'Can view', label: 'Can view', description: 'Can only view the project' },
@@ -27,7 +29,16 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
     { value: 'Can edit', label: 'Can edit', description: 'Can view, comment and edit' }
   ];
 
-  const shareUrl = `jottyme.app/p/${project.id.slice(0, 6)}`;
+  const getRole = (permission: string): string => {
+    switch (permission) {
+      case 'Can view': return 'viewer';
+      case 'Can comment': return 'commenter';
+      case 'Can edit': return 'editor';
+      default: return 'editor';
+    }
+  };
+
+  const shareUrl = `jottyme.app/p/${project.id}`;
 
   const handleTogglePrivacy = () => {
     setIsPublic(!isPublic);
@@ -39,15 +50,42 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
     toast.success('Link copied to clipboard');
   };
 
-  const handleInviteByEmail = () => {
+  const handleInviteByEmail = async () => {
     if (!emailInput.trim()) {
       toast.error('Please enter an email address');
       return;
     }
     
-    // Simulate sending invitation
-    toast.success(`Invitation sent to ${emailInput}`);
-    setEmailInput('');
+    setIsInviting(true);
+    try {
+      const token = Cookies.get('token');
+      const response = await fetch(`https://jottymebackend-production.up.railway.app/api/project/${project.id}/invite`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailInput,
+          role: getRole(selectedPermission),
+        }),
+      });
+
+      const responseData = await response.json();
+      console.log('Invite response:', responseData);
+
+      if (response.ok) {
+        toast.success(`Invitation sent to ${emailInput}`);
+        setEmailInput('');
+      } else {
+        toast.error('Failed to send invitation');
+      }
+    } catch (error) {
+      console.error('Error sending invitation:', error);
+      toast.error('Error sending invitation');
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const handleCopyLinkButton = () => {
@@ -179,7 +217,7 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
                     onChange={(e) => setEmailInput(e.target.value)}
                     className="w-full bg-transparent text-foreground text-[14px] placeholder:text-muted-foreground outline-none"
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === 'Enter' && !isInviting) {
                         handleInviteByEmail();
                       }
                     }}
@@ -189,6 +227,7 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
                   <button
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="bg-input border border-border rounded-[10px] px-[13px] py-[9px] w-[120px] flex items-center justify-between hover:bg-accent transition-colors"
+                    disabled={isInviting}
                   >
                     <span className="text-foreground text-[14px] leading-[20px] truncate">
                       {selectedPermission}
@@ -197,7 +236,7 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
                   </button>
                   
                   <AnimatePresence>
-                    {isDropdownOpen && (
+                    {isDropdownOpen && !isInviting && (
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -231,14 +270,18 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
                 </div>
                 <Button
                   onClick={handleInviteByEmail}
-                  disabled={!emailInput.trim()}
+                  disabled={!emailInput.trim() || isInviting}
                   className={`h-10 px-3 py-2 rounded-[10px] transition-opacity ${
-                    emailInput.trim() 
+                    emailInput.trim() && !isInviting
                       ? 'bg-[#6a49fc] hover:bg-[#5a3efc] opacity-100' 
                       : 'bg-[#6a49fc] opacity-50 cursor-not-allowed'
                   }`}
                 >
-                  <Send className="w-4 h-4" />
+                  {isInviting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
                 </Button>
               </div>
             </div>
@@ -249,6 +292,7 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
                 onClick={handleCopyLinkButton}
                 variant="outline"
                 className="flex-1 h-9 bg-transparent border-border text-foreground hover:bg-accent rounded-[8px] flex items-center justify-center gap-2"
+                disabled={isInviting}
               >
                 <Copy className="w-4 h-4" />
                 <span className="text-[14px] leading-[20px] font-medium">Copy link</span>
@@ -256,6 +300,7 @@ export function ShareModal({ isOpen, onClose, project }: ShareModalProps) {
               <Button
                 variant="outline"
                 className="h-9 px-[13px] py-[9px] bg-transparent border-border text-foreground hover:bg-accent rounded-[8px]"
+                disabled={isInviting}
               >
                 <Share className="w-4 h-4" />
               </Button>

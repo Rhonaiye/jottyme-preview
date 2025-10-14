@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/ui/pageHeader';
 import UnicornScene from '@/components/ui/unicornScene';
@@ -30,13 +31,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import SidebarLayout from '@/components/ui/sideBar';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
 import { useAuthStore } from '@/store/authStore';
+import { formatDistanceToNow } from 'date-fns';
 
 interface ProjectItem {
   id: string;
   name: string;
   type: string;
   updatedAt: string;
-  icon: string;
+  icon?: string;
+  url: string;
 }
 
 interface ActivityItem {
@@ -47,37 +50,6 @@ interface ActivityItem {
   time: string;
   avatar: string;
 }
-
-const mockProjects: ProjectItem[] = [
-  {
-    id: '1',
-    name: 'Invena - Creative Agency',
-    type: 'Website',
-    updatedAt: '2h ago',
-    icon: '🎨'
-  },
-  {
-    id: '2', 
-    name: 'Redox - Design Agency',
-    type: 'Website', 
-    updatedAt: '1d ago',
-    icon: '💼'
-  },
-  {
-    id: '3',
-    name: 'Redox - Parallax Carousel',
-    type: 'Website',
-    updatedAt: '2d ago',
-    icon: '🌊'
-  },
-  {
-    id: '4',
-    name: 'Redox - IT Solutions',
-    type: 'Website',
-    updatedAt: '3d ago',
-    icon: '💻'
-  }
-];
 
 const mockActivity: ActivityItem[] = [
   {
@@ -212,10 +184,22 @@ interface DashboardProps {
   onNewProjectClick?: () => void;
 }
 
-function Dashboard({ 
-  onImportClick, 
-  onUploadClick, 
-  onMyProjectsClick, 
+const getCookie = (name: string): string | undefined => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift();
+  return undefined;
+};
+
+const formatRelativeTime = (dateString: string) => {
+  try {
+    return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+  } catch {
+    return 'Unknown';
+  }
+};
+
+function Dashboard({  
   onSharedWithMeClick, 
   onProjectClick, 
   onNavigateToSettings, 
@@ -229,7 +213,64 @@ function Dashboard({
 }: DashboardProps) {
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
   const [isDarkTheme, setIsDarkTheme] = useState(false);
+  const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [projectLoading, setProjectLoading] = useState(true);
   const { loading } = useAuthStore();
+  const router = useRouter();
+
+  const onMyProjectsClick = ()=>{
+    router.push('/my-projects');
+  }
+
+  const onImportClick = ()=>{
+    ''
+  }
+
+   const onUploadClick = ()=>{
+    ''
+   }
+
+  // Fetch projects
+  useEffect(() => {
+    const fetchProjects = async () => {
+      setProjectLoading(true);
+      try {
+        const token = getCookie('token');
+        const response = await fetch('https://jottymebackend-production.up.railway.app/api/project', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log(responseData);
+          const apiProjects = Array.isArray(responseData.data) ? responseData.data : [];
+          const mappedProjects = apiProjects.map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            type: (p.type.charAt(0).toUpperCase() + p.type.slice(1)) as 'Website' | 'PDF' | 'Image' | 'Document',
+            url: p.sourceUrl?.[0] || '',
+            updatedAt: formatRelativeTime(p.updatedAt),
+            icon: '🌐',
+          }));
+          setProjects(mappedProjects);
+        } else {
+          console.error('Failed to fetch projects');
+          setProjects([]);
+        }
+      } catch (error) {
+        console.error('Error fetching projects:', error);
+        setProjects([]);
+      } finally {
+        setProjectLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   // Monitor theme changes
   useEffect(() => {
@@ -249,6 +290,42 @@ function Dashboard({
 
     return () => observer.disconnect();
   }, []);
+
+  // Handle project clicks with real project data
+  const handleProjectClick = (project: ProjectItem) => {
+    if (!project.url) return;
+    try {
+      const urlObj = new URL(project.url);
+      const domain = urlObj.hostname.replace('www.', '');
+      const siteName = domain.split('.')[0].charAt(0).toUpperCase() + domain.split('.')[0].slice(1);
+      const realProjectData = {
+        id: project.id,
+        name: project.name,
+        url: project.url,
+        type: 'website',
+        title: `${project.name} - Website`,
+        description: `Website content from ${domain}`,
+        isResponsive: true,
+        createdAt: new Date().toISOString(),
+        favicon: `https://www.google.com/s2/favicons?domain=${domain}&sz=64`,
+        siteName,
+        domain
+      };
+      if (onProjectClick) {
+        onProjectClick(realProjectData);
+      }
+    } catch (e) {
+      console.error('Invalid URL');
+    }
+  };
+
+  // Quick demo handler
+  const handleQuickDemo = () => {
+    const demoProject = projectDataMapping['Invena - Creative Agency'];
+    if (demoProject && onProjectClick) {
+      onProjectClick(demoProject);
+    }
+  };
 
   if (loading) {
     return (
@@ -428,22 +505,6 @@ function Dashboard({
       </PageHeader>
     );
   }
-
-  // Handle project clicks with real project data
-  const handleProjectClick = (project: ProjectItem) => {
-    const realProjectData = projectDataMapping[project.name];
-    if (realProjectData && onProjectClick) {
-      onProjectClick(realProjectData);
-    }
-  };
-
-  // Quick demo handler
-  const handleQuickDemo = () => {
-    const demoProject = projectDataMapping['Invena - Creative Agency'];
-    if (demoProject && onProjectClick) {
-      onProjectClick(demoProject);
-    }
-  };
 
   return (
     <PageHeader 
@@ -780,27 +841,40 @@ function Dashboard({
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
-              {mockProjects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
-                  onClick={() => handleProjectClick(project)}
-                >
-                  <div className="w-10 h-10 bg-slate-500/10 dark:bg-slate-500/20 rounded-lg flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+              {projectLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg">
+                    <Skeleton className="w-10 h-10 rounded-lg" />
+                    <div className="flex-1 space-y-1">
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-6 w-6" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">{project.name}</p>
-                    <p className="text-xs text-muted-foreground">Updated {project.updatedAt}</p>
-                  </div>
-                  <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </motion.div>
-              ))}
+                ))
+              ) : (
+                projects.slice(0, 4).map((project, index) => (
+                  <motion.div
+                    key={project.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 + index * 0.1, duration: 0.3 }}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent cursor-pointer transition-colors group"
+                    onClick={() => handleProjectClick(project)}
+                  >
+                    <div className="w-10 h-10 bg-slate-500/10 dark:bg-slate-500/20 rounded-lg flex items-center justify-center">
+                      <Globe className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate group-hover:text-slate-600 dark:group-hover:text-slate-400 transition-colors">{project.name}</p>
+                      <p className="text-xs text-muted-foreground">Updated {project.updatedAt}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                  </motion.div>
+                ))
+              )}
             </CardContent>
           </Card>
         </motion.div>
