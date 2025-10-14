@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/ui/sideBar';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/ui/pageHeader';
-import { Search, Grid3X3, List, Plus, Eye, Share2, Clock, Users, MessageSquare, Globe, FileText, Image, FileType } from 'lucide-react';
+import { Search, Grid3X3, List, Plus, Eye, Share2, Clock, Users, MessageSquare, Globe, FileText, Image, FileType, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShareModal } from '@/components/modals/shareModal';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
 import { NewProjectModal } from '@/components/modals/newProjectModal';
+import toast from 'react-hot-toast';
 import Cookies from 'js-cookie';
 
 interface ProjectData {
@@ -110,49 +111,54 @@ function MyProjects({
   const [isLoading, setIsLoading] = useState(true);
   const [projects, setProjects] = useState<ProjectData[]>([]);
   const [shareModalProject, setShareModalProject] = useState<ProjectData | null>(null);
+  const [deleteModalProject, setDeleteModalProject] = useState<ProjectData | null>(null);
   const [isNewProjectModalOpen, setIsNewProjectModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchProjects = async (): Promise<ProjectData[]> => {
+    setIsLoading(true);
+    try {
+      const token = Cookies.get('token');
+      const response = await fetch('https://jottymebackend-production.up.railway.app/api/project', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log(responseData);
+        const apiProjects = Array.isArray(responseData.data) ? responseData.data : [];
+        const mappedProjects = apiProjects.map((p: any) => ({
+          id: p._id,
+          name: p.name,
+          type: (p.type.charAt(0).toUpperCase() + p.type.slice(1)) as 'Website' | 'PDF' | 'Image' | 'Document',
+          url: p.sourceUrl?.[0] || '',
+          updatedAt: formatRelativeTime(p.updatedAt),
+          collaborators: p.collaborators?.length || 0,
+          comments: p.comments?.length || 0,
+          owner: true,
+          thumbnail: p.previewImage,
+        }));
+        setProjects(mappedProjects);
+        return mappedProjects;
+      } else {
+        console.error('Failed to fetch projects');
+        setProjects([]);
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      setProjects([]);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProjects = async () => {
-      setIsLoading(true);
-      try {
-        const token = Cookies.get('token');
-        const response = await fetch('https://jottymebackend-production.up.railway.app/api/project', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          const responseData = await response.json();
-          console.log(responseData);
-          const apiProjects = Array.isArray(responseData.data) ? responseData.data : [];
-          const mappedProjects = apiProjects.map((p: any) => ({
-            id: p._id,
-            name: p.name,
-            type: (p.type.charAt(0).toUpperCase() + p.type.slice(1)) as 'Website' | 'PDF' | 'Image' | 'Document',
-            url: p.sourceUrl?.[0] || '',
-            updatedAt: formatRelativeTime(p.updatedAt),
-            collaborators: p.collaborators?.length || 0,
-            comments: p.comments?.length || 0,
-            owner: true,
-            thumbnail: p.previewImage,
-          }));
-          setProjects(mappedProjects);
-        } else {
-          console.error('Failed to fetch projects');
-          setProjects([]);
-        }
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-        setProjects([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProjects();
   }, []);
 
@@ -168,6 +174,41 @@ function MyProjects({
 
   const handleCloseShareModal = () => {
     setShareModalProject(null);
+  };
+
+  const handleDeleteProject = (project: ProjectData) => {
+    setDeleteModalProject(project);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteModalProject) return;
+    const currentId = deleteModalProject.id;
+    setIsDeleting(true);
+    setDeleteModalProject(null);
+    try {
+      const token = Cookies.get('token');
+      await fetch(`https://jottymebackend-production.up.railway.app/api/project/${currentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+    }
+    const newProjects = await fetchProjects();
+    const isDeleted = !newProjects.some(p => p.id === currentId);
+    if (isDeleted) {
+      toast.success("Project deleted successfully");
+    } else {
+      toast.error("Failed to delete project");
+    }
+    setIsDeleting(false);
+  };
+
+  const handleCloseDeleteModal = () => {
+    setDeleteModalProject(null);
   };
 
   return (
@@ -264,9 +305,9 @@ function MyProjects({
           viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />
         ) : filteredProjects.length > 0 ? (
           viewMode === 'grid' ? (
-            <GridView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+            <GridView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} onDeleteProject={handleDeleteProject} />
           ) : (
-            <ListView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+            <ListView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} onDeleteProject={handleDeleteProject} />
           )
         ) : (
           <motion.div
@@ -303,10 +344,45 @@ function MyProjects({
         />
       )}
 
+      {/* Delete Confirmation Modal */}
+      {deleteModalProject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="bg-card border border-border rounded-lg p-6 sm:p-8 max-w-md w-full mx-4"
+          >
+            <div className="text-center space-y-4">
+              <Trash2 className="h-12 w-12 text-red-500 mx-auto" />
+              <h3 className="text-lg font-semibold text-foreground">Delete Project?</h3>
+              <p className="text-muted-foreground">Are you sure you want to delete "{deleteModalProject.name}"? This action cannot be undone.</p>
+              <div className="flex gap-3 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseDeleteModal}
+                  disabled={isDeleting}
+                  className="px-4"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={confirmDeleteProject}
+                  disabled={isDeleting}
+                  className="bg-red-500 hover:bg-red-600 text-white px-4"
+                >
+                  {isDeleting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* New Project Modal */}
       {isNewProjectModalOpen && (
         <NewProjectModal onClose={()=>setIsNewProjectModalOpen(false)} isOpen={isNewProjectModalOpen}/>
-
       )}
     </PageHeader>
   );
@@ -329,14 +405,7 @@ function GridSkeleton() {
               <Skeleton  className="h-4 sm:h-5 w-full" />
               <Skeleton  className="h-3 sm:h-4 w-3/4" />
             </div>
-            <div className="flex justify-between">
-              <Skeleton  className="h-3 sm:h-4 w-16" />
-              <Skeleton  className="h-3 sm:h-4 w-16" />
-            </div>
-            <div className="flex justify-between items-center pt-3 sm:pt-4 border-t border-border">
-              <Skeleton className="h-5 sm:h-6 w-16" />
-              <Skeleton  className="h-7 sm:h-8 w-20" />
-            </div>
+         
           </div>
         </motion.div>
       ))}
@@ -374,7 +443,7 @@ function ListSkeleton() {
   );
 }
 
-function GridView({ projects, onProjectClick, onShareProject }: { projects: ProjectData[], onProjectClick?: (project: any) => void, onShareProject?: (project: ProjectData) => void }) {
+function GridView({ projects, onProjectClick, onShareProject, onDeleteProject }: { projects: ProjectData[], onProjectClick?: (project: any) => void, onShareProject?: (project: ProjectData) => void, onDeleteProject?: (project: ProjectData) => void }) {
   const getProjectIcon = (type: string) => {
     switch (type) {
       case 'Website':
@@ -440,10 +509,10 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
             </div>
 
             {/* Hover overlay with actions */}
-            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2 sm:gap-3">
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-1 sm:gap-2">
               <Button 
                 size="sm" 
-                className="bg-[#6a49fc] hover:bg-[#5a3efc] text-white h-8 sm:h-9 px-3 sm:px-4 rounded-lg shadow-lg hover:shadow-[0_4px_20px_rgba(106,73,252,0.4)] transition-all duration-200 text-xs sm:text-sm"
+                className="bg-[#6a49fc] hover:bg-[#5a3efc] text-white h-7 sm:h-8 px-2 sm:px-3 rounded-lg shadow-lg hover:shadow-[0_4px_20px_rgba(106,73,252,0.4)] transition-all duration-200 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onProjectClick?.(project);
@@ -455,7 +524,7 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
               <Button 
                 variant="ghost"
                 size="sm" 
-                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 h-8 sm:h-9 px-3 sm:px-4 rounded-lg transition-all duration-200 text-xs sm:text-sm"
+                className="bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20 h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all duration-200 text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onShareProject?.(project);
@@ -463,6 +532,18 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
               >
                 <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Share
+              </Button>
+              <Button 
+                variant="ghost"
+                size="sm" 
+                className="bg-red-500/20 backdrop-blur-sm border-red-500/30 text-red-400 hover:bg-red-500/30 hover:text-red-300 h-7 sm:h-8 px-2 sm:px-3 rounded-lg transition-all duration-200 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteProject?.(project);
+                }}
+              >
+                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Delete
               </Button>
             </div>
           </div>
@@ -480,7 +561,7 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
   );
 }
 
-function ListView({ projects, onProjectClick, onShareProject }: { projects: ProjectData[], onProjectClick?: (project: any) => void, onShareProject?: (project: ProjectData) => void }) {
+function ListView({ projects, onProjectClick, onShareProject, onDeleteProject }: { projects: ProjectData[], onProjectClick?: (project: any) => void, onShareProject?: (project: ProjectData) => void, onDeleteProject?: (project: ProjectData) => void }) {
   const getProjectIcon = (type: string) => {
     switch (type) {
       case 'Website':
@@ -551,11 +632,11 @@ function ListView({ projects, onProjectClick, onShareProject }: { projects: Proj
             </div>
 
             {/* Right side - Actions */}
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-1 sm:gap-2 w-full sm:w-auto">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="flex-1 sm:flex-initial h-8 sm:h-9 px-3 sm:px-4 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all text-xs sm:text-sm"
+                className="flex-1 sm:flex-initial h-7 sm:h-8 px-2 sm:px-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onProjectClick?.(project);
@@ -567,7 +648,7 @@ function ListView({ projects, onProjectClick, onShareProject }: { projects: Proj
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="flex-1 sm:flex-initial h-8 sm:h-9 px-3 sm:px-4 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all text-xs sm:text-sm"
+                className="flex-1 sm:flex-initial h-7 sm:h-8 px-2 sm:px-3 text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-all text-xs"
                 onClick={(e) => {
                   e.stopPropagation();
                   onShareProject?.(project);
@@ -575,6 +656,18 @@ function ListView({ projects, onProjectClick, onShareProject }: { projects: Proj
               >
                 <Share2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
                 Share
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="flex-1 sm:flex-initial h-7 sm:h-8 px-2 sm:px-3 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-all text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDeleteProject?.(project);
+                }}
+              >
+                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                Delete
               </Button>
             </div>
           </div>

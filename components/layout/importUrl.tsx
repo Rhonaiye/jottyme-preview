@@ -8,7 +8,6 @@ import { Button } from '../ui/button';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useRouter } from 'next/navigation';
-import { toPng } from 'html-to-image';
 
 
 interface WebsiteData {
@@ -310,64 +309,17 @@ export function ImportURL() {
         throw new Error('Authentication token not found');
       }
 
-      const formData = new FormData();
-      formData.append('name', projectName);
-      formData.append('type', 'website');
-      formData.append('sourceUrl', url);
-
-      // Capture preview image using html-to-image (note: may not capture cross-origin iframe content fully)
-      if (websiteData) {
-        const previewElement = document.querySelector('.preview-content') as HTMLElement;
-        const iframeEl = previewElement?.querySelector('iframe') as HTMLIFrameElement | null;
-        const fallbackEl = previewElement?.querySelector('.iframe-fallback') as HTMLElement | null;
-
-        if (previewElement && fallbackEl) {
-          // Temporarily show fallback and hide iframe for capture
-          const wasFallbackVisible = fallbackEl.style.display !== 'none';
-          const wasIframeVisible = iframeEl ? iframeEl.style.display !== 'none' : false;
-
-          if (iframeEl) {
-            iframeEl.style.display = 'none';
-          }
-          fallbackEl.style.display = 'flex';
-
-          // Small delay to ensure render
-          await new Promise(resolve => setTimeout(resolve, 100));
-
-          const dataUrl = await toPng(previewElement, { 
-            pixelRatio: 1,
-            quality: 1,
-            skipFonts: false,
-            filter: (node: Node) => {
-              if (node.nodeName === 'IMG') {
-                const img = node as HTMLImageElement;
-                if (img.src && img.src.includes('google.com/s2/favicons')) {
-                  return false;
-                }
-              }
-              return true;
-            },
-          });
-
-          // Restore visibility
-          fallbackEl.style.display = wasFallbackVisible ? 'flex' : 'none';
-          if (iframeEl) {
-            iframeEl.style.display = wasIframeVisible ? 'block' : 'none';
-          }
-
-          const response = await fetch(dataUrl);
-          const blob = await response.blob();
-          formData.append('file', blob, 'preview.png');
-          console.log('Preview image captured and added to form data');
-        }
-      }
-
       const response = await fetch('https://jottymebackend-production.up.railway.app/api/project/link', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: formData,
+        body: JSON.stringify({
+          name: projectName,
+          type: 'website',
+          sourceUrl: url,
+        }),
       });
 
       if (!response.ok) {
@@ -387,9 +339,9 @@ export function ImportURL() {
       toast.success('Project created successfully!');
       
       // Navigate to project view
-      //setTimeout(() => {
-       // onProjectCreated(projectData);
-      //}, 800);
+      setTimeout(() => {
+        router.push('/my-projects');
+      }, 1200);
     } catch (error) {
       console.error('Error creating project:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to create project';

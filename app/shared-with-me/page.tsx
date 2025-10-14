@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SidebarLayout from '@/components/ui/sideBar';
 import { motion } from 'framer-motion';
 import { PageHeader } from '@/components/ui/pageHeader';
@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ShareModal } from '@/components/modals/shareModal';
 import { JottyAIButton } from '@/components/ui/jottyAiButton';
+import Cookies from 'js-cookie';
 
 interface ProjectData {
   id: string;
@@ -21,85 +22,38 @@ interface ProjectData {
   comments: number;
   owner: boolean;
   thumbnail?: string;
-  icon: string;
 }
 
-const mockProjects: ProjectData[] = [
-  {
-    id: '1',
-    name: 'Invena - Creative Agency',
-    type: 'Website',
-    url: 'https://html.themewant.com/invena/onepage-one.html',
-    updatedAt: '2 hours ago',
-    collaborators: 4,
-    comments: 12,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://html.themewant.com/invena/onepage-one.html',
-    icon: '🎨'
-  },
-  {
-    id: '2',
-    name: 'Redox - Design Agency',
-    type: 'Website',
-    url: 'https://html.ravextheme.com/redox/light/design-agency.html',
-    updatedAt: '1 day ago',
-    collaborators: 6,
-    comments: 18,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://html.ravextheme.com/redox/light/design-agency.html',
-    icon: '💼'
-  },
-  {
-    id: '3',
-    name: 'Redox - Parallax Carousel',
-    type: 'Website',
-    url: 'https://html.ravextheme.com/redox/dark/parallax-carousal.html',
-    updatedAt: '2 days ago',
-    collaborators: 3,
-    comments: 9,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://html.ravextheme.com/redox/dark/parallax-carousal.html',
-    icon: '🌊'
-  },
-  {
-    id: '4',
-    name: 'Redox - IT Solutions',
-    type: 'Website',
-    url: 'https://html.ravextheme.com/redox/dark/it-solution.html',
-    updatedAt: '3 days ago',
-    collaborators: 8,
-    comments: 25,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://html.ravextheme.com/redox/dark/it-solution.html',
-    icon: '💻'
-  },
-  {
-    id: '5',
-    name: 'Invena - Portfolio Hub',
-    type: 'Website',
-    url: 'https://html.themewant.com/invena/',
-    updatedAt: '4 days ago',
-    collaborators: 5,
-    comments: 14,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://html.themewant.com/invena/',
-    icon: '🎯'
-  },
-  {
-    id: '6',
-    name: 'FlyPro - Aviation Services',
-    type: 'Website',
-    url: 'https://www.flypro.io/',
-    updatedAt: '1 week ago',
-    collaborators: 7,
-    comments: 20,
-    owner: true,
-    thumbnail: 'https://image.thum.io/get/width/400/crop/800/https://www.flypro.io/',
-    icon: '✈️'
-  }
-];
-
 type ViewMode = 'grid' | 'list';
+
+const formatRelativeTime = (dateString: string): string => {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diffInMs = now.getTime() - date.getTime();
+
+  if (diffInMs < 0) return 'In the future';
+
+  const seconds = Math.floor(diffInMs / 1000);
+  if (seconds < 60) return 'Just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+
+  const months = Math.floor(days / 30.44); // Approximate month length
+  if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
+
+  const years = Math.floor(months / 12);
+  return `${years} year${years !== 1 ? 's' : ''} ago`;
+};
 
 // Project mapping with complete data for project view
 const createProjectData = (project: ProjectData) => {
@@ -154,12 +108,59 @@ function SharedWithMeProjects({
 }: MyProjectsProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [projects, setProjects] = useState<ProjectData[]>([]);
   const [shareModalProject, setShareModalProject] = useState<ProjectData | null>(null);
 
-  const filteredProjects = mockProjects.filter(project =>
+  useEffect(() => {
+    const fetchSharedProjects = async () => {
+      setIsLoading(true);
+      try {
+        const token = Cookies.get('token');
+        const response = await fetch('https://jottymebackend-production.up.railway.app/api/project/shared', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log(responseData);
+          const apiProjects = Array.isArray(responseData.data) ? responseData.data : [];
+          const mappedProjects = apiProjects.map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            type: (p.type.charAt(0).toUpperCase() + p.type.slice(1)) as 'Website' | 'PDF' | 'Image' | 'Document',
+            url: p.sourceUrl?.[0] || '',
+            updatedAt: formatRelativeTime(p.updatedAt),
+            collaborators: p.collaborators?.length || 0,
+            comments: p.comments?.length || 0,
+            owner: false,
+            thumbnail: p.previewImage,
+          }));
+          setProjects(mappedProjects);
+        } else {
+          console.error('Failed to fetch shared projects');
+          setProjects([]);
+        }
+      } catch (error) {
+        console.error('Error fetching shared projects:', error);
+        setProjects([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchSharedProjects();
+  }, []);
+
+  const filteredProjects = Array.isArray(projects) ? projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) : [];
+
+  const hasProjectsOrLoading = isLoading || filteredProjects.length > 0;
 
   const handleShareProject = (project: ProjectData) => {
     setShareModalProject(project);
@@ -195,60 +196,50 @@ function SharedWithMeProjects({
           </div>
         </div>
         
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <Button 
-            onClick={onNewProjectClick}
-            className="bg-[#6a49fc] hover:bg-[#5a3efc] text-white h-9 sm:h-10 px-4 sm:px-6 rounded-lg shadow-lg hover:shadow-[0_8px_30px_rgb(106,73,252,0.3)] transition-all duration-200 font-medium text-sm"
-          >
-            <Plus className="h-4 w-4 mr-1 sm:mr-2" />
-            <span className="hidden xs:inline">New Project</span>
-            <span className="xs:hidden">New</span>
-          </Button>
-        </motion.div>
+     
       </div>
 
-      {/* Search and View Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
-        <div className="relative w-full sm:w-96">
-          <Input 
-            placeholder="Search shared projects or collaborators..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-card border-border text-foreground placeholder:text-muted-foreground pl-10 sm:pl-11 h-10 sm:h-11 rounded-lg focus:border-[#6a49fc] focus:ring-1 focus:ring-[#6a49fc] transition-all"
-          />
-          <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      {/* Search and View Controls - Only show if loading or has projects */}
+      {hasProjectsOrLoading && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div className="relative w-full sm:w-96">
+            <Input 
+              placeholder="Search shared projects or collaborators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-card border-border text-foreground placeholder:text-muted-foreground pl-10 sm:pl-11 h-10 sm:h-11 rounded-lg focus:border-[#6a49fc] focus:ring-1 focus:ring-[#6a49fc] transition-all"
+            />
+            <Search className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          </div>
+          
+          <div className="bg-card border border-border rounded-lg p-1 flex">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('grid')}
+              className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg transition-all duration-200 ${
+                viewMode === 'grid' 
+                  ? 'bg-[#6a49fc] text-white shadow-md' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setViewMode('list')}
+              className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg transition-all duration-200 ${
+                viewMode === 'list' 
+                  ? 'bg-[#6a49fc] text-white shadow-md' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
-        
-        <div className="bg-card border border-border rounded-lg p-1 flex">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg transition-all duration-200 ${
-              viewMode === 'grid' 
-                ? 'bg-[#6a49fc] text-white shadow-md' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
-          >
-            <Grid3X3 className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setViewMode('list')}
-            className={`h-8 sm:h-9 px-3 sm:px-4 rounded-lg transition-all duration-200 ${
-              viewMode === 'list' 
-                ? 'bg-[#6a49fc] text-white shadow-md' 
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
-          >
-            <List className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+      )}
 
       {/* Projects */}
       <motion.div
@@ -259,10 +250,23 @@ function SharedWithMeProjects({
       >
         {isLoading ? (
           viewMode === 'grid' ? <GridSkeleton /> : <ListSkeleton />
-        ) : viewMode === 'grid' ? (
-          <GridView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+        ) : filteredProjects.length > 0 ? (
+          viewMode === 'grid' ? (
+            <GridView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+          ) : (
+            <ListView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+          )
         ) : (
-          <ListView projects={filteredProjects} onProjectClick={(project) => onProjectClick?.(createProjectData(project))} onShareProject={handleShareProject} />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-center py-12 space-y-4"
+          >
+            <div className="text-6xl mb-4">📁</div>
+            <h3 className="text-xl font-semibold text-foreground">No shared projects yet</h3>
+            <p className="text-muted-foreground max-w-md mx-auto">No projects have been shared with you yet. Check back later or create your own to start collaborating.</p>
+          </motion.div>
         )}
       </motion.div>
 
@@ -375,7 +379,7 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
           {/* Thumbnail */}
           <div className="h-32 sm:h-48 relative overflow-hidden">
             <img 
-              src={project.thumbnail} 
+              src={project.thumbnail || (project.url ? `https://image.thum.io/get/width/400/crop/800/${project.url}` : '')} 
               alt={project.name}
               className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
@@ -390,7 +394,7 @@ function GridView({ projects, onProjectClick, onShareProject }: { projects: Proj
             </div>
             <div className="absolute top-2 sm:top-4 right-2 sm:right-4">
               <Badge className="bg-[rgba(106,73,252,0.9)] backdrop-blur-sm border-[rgba(106,73,252,0.4)] text-white hover:bg-[rgba(106,73,252,0.9)] text-xs px-1.5 sm:px-2 py-0.5">
-                <span className="text-xs">Owner</span>
+                <span className="text-xs">Shared</span>
               </Badge>
             </div>
 
@@ -492,7 +496,7 @@ function ListView({ projects, onProjectClick, onShareProject }: { projects: Proj
                     {project.type}
                   </Badge>
                   <Badge className="bg-[rgba(106,73,252,0.2)] text-[#a78bfa] border-[rgba(106,73,252,0.3)] hover:bg-[rgba(106,73,252,0.2)] text-xs px-2 py-0.5">
-                    Owner
+                    Shared
                   </Badge>
                 </div>
                 
